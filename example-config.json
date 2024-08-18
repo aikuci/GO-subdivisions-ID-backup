@@ -1,0 +1,16 @@
+{
+  "app": {
+    "name": "go-subdivisions-ID",
+    "mode": "development"
+  },
+  "web": {
+    "prefork": false,
+    "port": 3000
+  },
+  "log": {
+    "level": 6
+  },
+  "database": {
+    "file": "db/test.db"
+  }
+}
