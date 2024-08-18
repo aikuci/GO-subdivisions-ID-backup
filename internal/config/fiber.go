@@ -2,29 +2,34 @@ package config
 
 import (
 	"fmt"
+	"io"
 	"log"
 	"runtime/debug"
+	"time"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/spf13/viper"
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapio"
 )
 
-func NewFiber(config *viper.Viper, zapLog *zap.Logger) *fiber.App {
+type AppOptions struct {
+	LogWriter io.Writer
+}
+
+func NewFiber(config *viper.Viper, options *AppOptions) *fiber.App {
 	var app = fiber.New(fiber.Config{
 		AppName:      config.GetString("app.name"),
 		ErrorHandler: NewErrorHandler(),
 		Prefork:      config.GetBool("web.prefork"),
 	})
 
-	zapLogWriter := &zapio.Writer{Log: zapLog}
-	defer zapLogWriter.Close()
-	app.Use(logger.New(logger.Config{
-		Output: zapLogWriter,
+	app.Use(requestid.New(), logger.New(logger.Config{
+		Format:     "[${time}](${pid} ${locals:requestid}) ${status} - ${latency} ${method} ${path}\n",
+		TimeFormat: time.RFC1123Z,
+		Output:     options.LogWriter,
 	}))
 	app.Use(limiter.New(limiter.Config{
 		Max:                    10,
