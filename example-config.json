@@ -11,6 +11,17 @@
     "level": 6
   },
   "database": {
-    "file": "db/test.db"
+    "pool": {
+      "idle": 10,
+      "max": 100,
+      "lifetime": 300
+    },
+    "type": "sqlite",
+    "sqlite": {
+      "file": "db/test.db"
+    },
+    "pg": {
+      "url": "postgresql://postgres:postgres@localhost:5432/playground?sslmode=disable"
+    }
   }
 }

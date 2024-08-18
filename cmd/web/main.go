@@ -54,6 +54,6 @@ func main() {
 	}
 
 	serverShutdown.Wait()
-	fmt.Println("Running cleanup tasks...")
+	log.Println("Running cleanup tasks...")
 	// Cleanup tasks
 }
