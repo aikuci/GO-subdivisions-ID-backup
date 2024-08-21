@@ -8,4 +8,7 @@ func (c *RouteConfig) SetupV1Route() {
 	v1.Get("/ping", func(c *fiber.Ctx) error {
 		return c.SendString("PONG from V1")
 	})
+
+	v1.Get("/provinces", c.ProvinceController.List)
+	v1.Get("/provinces/:id<int>", c.ProvinceController.GetByID)
 }

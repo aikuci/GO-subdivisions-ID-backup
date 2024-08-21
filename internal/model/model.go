@@ -1,5 +1,9 @@
 package model
 
+type BaseCollectionResponse struct {
+	ID int `json:"id"`
+}
+
 type WebResponse[T any] struct {
 	Data   T             `json:"data"`
 	Paging *PageMetadata `json:"paging,omitempty"`
@@ -16,4 +20,11 @@ type PageMetadata struct {
 	Size      int   `json:"size"`
 	TotalItem int64 `json:"total_item"`
 	TotalPage int64 `json:"total_page"`
+}
+
+type ListRequest struct {
+}
+
+type GetByIDRequest struct {
+	ID int `json:"-" validate:"required"`
 }
