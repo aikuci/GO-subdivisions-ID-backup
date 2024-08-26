@@ -7,20 +7,22 @@ import (
 
 type Repository[T any, TId model.IdSingular, TIds model.IdPlural] struct{}
 
+// TODO:
+// Refer to the GORM documentation for advanced query examples: https://gorm.io/docs/advanced_query.html#Find-To-Map
+// Issues:
+// 1. Known bug with unsupported data type `&[]`, affecting `pq.Int64Array`.
+// 2. Known issue with unsupported data type `&[]` for `[]CityResponse` when processing `provinceResponse`.
+
 // Retrieve Collections
 func (r *Repository[T, TId, TIds]) Find(db *gorm.DB) ([]T, error) {
 	var collections []T
-	if err := db.Find(&collections).Error; err != nil {
-		return nil, err
-	}
-	return collections, nil
+	err := db.Find(&collections).Error
+	return collections, err
 }
 func (r *Repository[T, TId, TIds]) FindBy(db *gorm.DB, where map[string]interface{}) ([]T, error) {
 	var collections []T
-	if err := db.Where(where).Find(&collections).Error; err != nil {
-		return nil, err
-	}
-	return collections, nil
+	err := db.Where(where).Find(&collections).Error
+	return collections, err
 }
 func (r *Repository[T, TId, TIds]) FindById(db *gorm.DB, id TId) ([]T, error) {
 	return r.FindBy(db, map[string]interface{}{"id": id})
@@ -32,17 +34,13 @@ func (r *Repository[T, TId, TIds]) FindByIds(db *gorm.DB, ids TIds) ([]T, error)
 // Retrieve First Collection
 func (r *Repository[T, TId, TIds]) First(db *gorm.DB) (*T, error) {
 	var collection T
-	if err := db.First(&collection).Error; err != nil {
-		return nil, err
-	}
-	return &collection, nil
+	err := db.First(&collection).Error
+	return &collection, err
 }
 func (r *Repository[T, TId, TIds]) FirstBy(db *gorm.DB, where map[string]interface{}) (*T, error) {
 	var collection T
-	if err := db.Where(where).First(&collection).Error; err != nil {
-		return nil, err
-	}
-	return &collection, nil
+	err := db.Where(where).First(&collection).Error
+	return &collection, err
 }
 func (r *Repository[T, TId, TIds]) FirstById(db *gorm.DB, id TId) (*T, error) {
 	return r.FirstBy(db, map[string]interface{}{"id": id})

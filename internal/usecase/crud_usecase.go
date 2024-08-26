@@ -14,10 +14,10 @@ import (
 )
 
 type CruderUseCase[T any] interface {
-	List(ctx context.Context, request *model.ListRequest) ([]T, error)
-	GetByID(ctx context.Context, request *model.GetByIDRequest[int]) ([]T, error)
-	GetByIDs(ctx context.Context, request *model.GetByIDRequest[[]int]) ([]T, error)
-	GetFirstByID(ctx context.Context, request *model.GetByIDRequest[int]) (*T, error)
+	List(ctx context.Context, request model.ListRequest) ([]T, error)
+	GetByID(ctx context.Context, request model.GetByIDRequest[int]) ([]T, error)
+	GetByIDs(ctx context.Context, request model.GetByIDRequest[[]int]) ([]T, error)
+	GetFirstByID(ctx context.Context, request model.GetByIDRequest[int]) (*T, error)
 }
 
 type CrudUseCase[T any] struct {
@@ -34,72 +34,64 @@ func NewCrudUseCase[T any](log *zap.Logger, db *gorm.DB, repository repository.C
 	}
 }
 
-func (uc *CrudUseCase[T]) List(ctx context.Context, request *model.ListRequest) ([]T, error) {
-	useCase := NewUseCase[T](uc.Log, uc.DB, request)
+func (uc *CrudUseCase[T]) List(ctx context.Context, request model.ListRequest) ([]T, error) {
+	useCase := newUseCase[T](uc.Log, uc.DB, request)
 
-	return WrapperPlural(ctx, useCase, uc.listFn)
-}
-func (uc *CrudUseCase[T]) listFn(cp *CallbackParam[*model.ListRequest]) ([]T, error) {
-	collections, err := uc.Repository.Find(cp.tx)
-
-	if err != nil {
-		cp.log.Warn(err.Error())
-		return nil, fiber.ErrInternalServerError
-	}
-
-	return collections, nil
+	return wrapperPlural(
+		ctx,
+		useCase,
+		func(cp *CallbackParam[model.ListRequest]) ([]T, error) {
+			return uc.Repository.Find(cp.tx)
+		},
+	)
 }
 
-func (uc *CrudUseCase[T]) GetByID(ctx context.Context, request *model.GetByIDRequest[int]) ([]T, error) {
-	useCase := NewUseCase[T](uc.Log, uc.DB, request)
+func (uc *CrudUseCase[T]) GetByID(ctx context.Context, request model.GetByIDRequest[int]) ([]T, error) {
+	useCase := newUseCase[T](uc.Log, uc.DB, request)
 
-	return WrapperPlural(ctx, useCase, uc.getByIdFn)
-}
-func (uc *CrudUseCase[T]) getByIdFn(cp *CallbackParam[*model.GetByIDRequest[int]]) ([]T, error) {
-	collections, err := uc.Repository.FindById(cp.tx, cp.request.ID)
-
-	if err != nil {
-		cp.log.Warn(err.Error())
-		return nil, fiber.ErrInternalServerError
-	}
-
-	return collections, nil
+	return wrapperPlural(
+		ctx,
+		useCase,
+		func(cp *CallbackParam[model.GetByIDRequest[int]]) ([]T, error) {
+			return uc.Repository.FindById(cp.tx, cp.request.ID)
+		},
+	)
 }
 
-func (uc *CrudUseCase[T]) GetByIDs(ctx context.Context, request *model.GetByIDRequest[[]int]) ([]T, error) {
-	useCase := NewUseCase[T](uc.Log, uc.DB, request)
+func (uc *CrudUseCase[T]) GetByIDs(ctx context.Context, request model.GetByIDRequest[[]int]) ([]T, error) {
+	useCase := newUseCase[T](uc.Log, uc.DB, request)
 
-	return WrapperPlural(ctx, useCase, uc.getByIdsFn)
-}
-func (uc *CrudUseCase[T]) getByIdsFn(cp *CallbackParam[*model.GetByIDRequest[[]int]]) ([]T, error) {
-	collections, err := uc.Repository.FindByIds(cp.tx, cp.request.ID)
-
-	if err != nil {
-		cp.log.Warn(err.Error())
-		return nil, fiber.ErrInternalServerError
-	}
-
-	return collections, nil
+	return wrapperPlural(
+		ctx,
+		useCase,
+		func(cp *CallbackParam[model.GetByIDRequest[[]int]]) ([]T, error) {
+			return uc.Repository.FindByIds(cp.tx, cp.request.ID)
+		},
+	)
 }
 
-func (uc *CrudUseCase[T]) GetFirstByID(ctx context.Context, request *model.GetByIDRequest[int]) (*T, error) {
-	useCase := NewUseCase[T](uc.Log, uc.DB, request)
+func (uc *CrudUseCase[T]) GetFirstByID(ctx context.Context, request model.GetByIDRequest[int]) (*T, error) {
+	useCase := newUseCase[T](uc.Log, uc.DB, request)
 
-	return WrapperSingular(ctx, useCase, uc.getFirstByIdFn)
-}
-func (uc *CrudUseCase[T]) getFirstByIdFn(cp *CallbackParam[*model.GetByIDRequest[int]]) (*T, error) {
-	id := cp.request.ID
-	collection, err := uc.Repository.FirstById(cp.tx, id)
+	return wrapperSingular(
+		ctx,
+		useCase,
+		func(cp *CallbackParam[model.GetByIDRequest[int]]) (*T, error) {
+			db := cp.tx
+			id := cp.request.ID
+			collection, err := uc.Repository.FirstById(db, id)
 
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			cp.log.Warn(err.Error(), zap.String("errorMessage", fmt.Sprintf("failed to get data with ID: %d", id)))
-			return nil, fiber.ErrNotFound
-		}
+			if err != nil {
+				if errors.Is(err, gorm.ErrRecordNotFound) {
+					cp.log.Warn(err.Error(), zap.String("errorMessage", fmt.Sprintf("failed to get data with ID: %d", id)))
+					return nil, fiber.ErrNotFound
+				}
 
-		cp.log.Warn(err.Error())
-		return nil, fiber.ErrInternalServerError
-	}
+				cp.log.Warn(err.Error())
+				return nil, fiber.ErrInternalServerError
+			}
 
-	return collection, nil
+			return collection, nil
+		},
+	)
 }

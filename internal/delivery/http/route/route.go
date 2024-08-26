@@ -27,7 +27,7 @@ func (c *RouteConfig) SetupRootRoute() {
 	c.App.Use(healthcheck.New())
 
 	c.App.Get("/metrics", monitor.New())
-	c.App.Get("/ping", func(c *fiber.Ctx) error {
-		return c.SendString("PONG")
+	c.App.Get("/ping", func(ctx *fiber.Ctx) error {
+		return ctx.SendString("PONG")
 	})
 }
