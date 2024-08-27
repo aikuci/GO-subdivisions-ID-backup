@@ -7,101 +7,74 @@ import (
 
 	"github.com/aikuci/go-subdivisions-id/internal/entity"
 	"github.com/aikuci/go-subdivisions-id/internal/model"
-	"github.com/aikuci/go-subdivisions-id/internal/model/mapper"
+	apperror "github.com/aikuci/go-subdivisions-id/internal/pkg/error"
 	"github.com/aikuci/go-subdivisions-id/internal/repository"
-	"github.com/gofiber/fiber/v2"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 type CityUseCase struct {
-	CrudUseCase CrudUseCase[entity.City] // embedded
-
+	Log        *zap.Logger
+	DB         *gorm.DB
 	Repository repository.CityRepository[int, []int]
 }
 
-func NewCityUseCase(logger *zap.Logger, db *gorm.DB, repository *repository.CityRepository[int, []int], mapper mapper.CruderMapper[entity.City, model.CityResponse]) *CityUseCase {
-	crudUseCase := NewCrudUseCase(logger, db, repository)
-
+func NewCityUseCase(log *zap.Logger, db *gorm.DB, repository *repository.CityRepository[int, []int]) *CityUseCase {
 	return &CityUseCase{
-		CrudUseCase: *crudUseCase,
-
+		Log:        log,
+		DB:         db,
 		Repository: *repository,
 	}
 }
 
-func (uc *CityUseCase) List(ctx context.Context, request model.ListRequest) ([]entity.City, error) {
-	return uc.CrudUseCase.List(ctx, request)
-}
-func (uc *CityUseCase) GetByID(ctx context.Context, request model.GetByIDRequest[int]) ([]entity.City, error) {
-	return uc.CrudUseCase.GetByID(ctx, request)
-}
-func (uc *CityUseCase) GetByIDs(ctx context.Context, request model.GetByIDRequest[[]int]) ([]entity.City, error) {
-	return uc.CrudUseCase.GetByIDs(ctx, request)
-}
-func (uc *CityUseCase) GetFirstByID(ctx context.Context, request model.GetByIDRequest[int]) (*entity.City, error) {
-	return uc.CrudUseCase.GetFirstByID(ctx, request)
-}
-
-// Specific UseCase
-func (uc *CityUseCase) ListFindByIDAndIDProvince(ctx context.Context, request model.ListCityByIDRequest[[]int]) ([]entity.City, error) {
-	useCase := newUseCase[entity.City](uc.CrudUseCase.Log, uc.CrudUseCase.DB, request)
-
+func (uc *CityUseCase) List(ctx context.Context, request model.ListCityByIDRequest[[]int]) ([]entity.City, error) {
 	return wrapperPlural(
-		ctx,
-		useCase,
-		func(cp *CallbackParam[model.ListCityByIDRequest[[]int]]) ([]entity.City, error) {
+		newUseCase[entity.City](ctx, uc.Log, uc.DB, request),
+		func(ca *CallbackArgs[model.ListCityByIDRequest[[]int]]) ([]entity.City, error) {
 			where := map[string]interface{}{}
-			if cp.request.ID != nil {
-				where["id"] = cp.request.ID
+			if ca.request.ID != nil {
+				where["id"] = ca.request.ID
 			}
-			if cp.request.IDProvince != nil {
-				where["id_province"] = cp.request.IDProvince
+			if ca.request.IDProvince != nil {
+				where["id_province"] = ca.request.IDProvince
 			}
-			return uc.Repository.FindBy(cp.tx, where)
+			return uc.Repository.FindBy(ca.tx, where)
 		},
 	)
 }
-
-func (uc *CityUseCase) GetFindByIDAndIDProvince(ctx context.Context, request model.GetCityByIDRequest[[]int]) ([]entity.City, error) {
-	useCase := newUseCase[entity.City](uc.CrudUseCase.Log, uc.CrudUseCase.DB, request)
-
+func (uc *CityUseCase) GetById(ctx context.Context, request model.GetCityByIDRequest[[]int]) ([]entity.City, error) {
 	return wrapperPlural(
-		ctx,
-		useCase,
-		func(cp *CallbackParam[model.GetCityByIDRequest[[]int]]) ([]entity.City, error) {
+		newUseCase[entity.City](ctx, uc.Log, uc.DB, request),
+		func(ca *CallbackArgs[model.GetCityByIDRequest[[]int]]) ([]entity.City, error) {
 			where := map[string]interface{}{}
-			if cp.request.ID != nil {
-				where["id"] = cp.request.ID
+			if ca.request.ID != nil {
+				where["id"] = ca.request.ID
 			}
-			if cp.request.IDProvince != nil {
-				where["id_province"] = cp.request.IDProvince
+			if ca.request.IDProvince != nil {
+				where["id_province"] = ca.request.IDProvince
 			}
-			return uc.Repository.FindBy(cp.tx, where)
+			return uc.Repository.FindBy(ca.tx, where)
 		},
 	)
 }
-
-func (uc *CityUseCase) GetFirstByIDAndIDProvince(ctx context.Context, request model.GetCityByIDRequest[int]) (*entity.City, error) {
-	useCase := newUseCase[entity.City](uc.CrudUseCase.Log, uc.CrudUseCase.DB, request)
-
+func (uc *CityUseCase) GetFirstById(ctx context.Context, request model.GetCityByIDRequest[int]) (*entity.City, error) {
 	return wrapperSingular(
-		ctx,
-		useCase,
-		func(cp *CallbackParam[model.GetCityByIDRequest[int]]) (*entity.City, error) {
-			id := cp.request.ID
-			idProvince := cp.request.IDProvince
-			collection, err := uc.Repository.FirstByIdAndIdProvince(cp.tx, id, idProvince)
+		newUseCase[entity.City](ctx, uc.Log, uc.DB, request),
+		func(ca *CallbackArgs[model.GetCityByIDRequest[int]]) (*entity.City, error) {
+			id := ca.request.ID
+			idProvince := ca.request.IDProvince
+			collection, err := uc.Repository.FirstByIdAndIdProvince(ca.tx, id, idProvince)
 
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
-					cp.log.Warn(err.Error(), zap.String("errorMessage", fmt.Sprintf("failed to get cities data with ID: %d and ID Province: %d", id, idProvince)))
-					return nil, fiber.ErrNotFound
+					errorMessage := fmt.Sprintf("failed to get cities data with ID: %d and ID Province: %d", id, idProvince)
+					ca.log.Warn(err.Error(), zap.String("errorMessage", errorMessage))
+					return nil, apperror.RecordNotFound(errorMessage)
 				}
 
-				cp.log.Warn(err.Error())
-				return nil, fiber.ErrInternalServerError
+				ca.log.Warn(err.Error())
+				return nil, err
 			}
 
 			return collection, nil

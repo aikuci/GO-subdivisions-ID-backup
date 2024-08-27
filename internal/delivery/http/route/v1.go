@@ -10,10 +10,15 @@ func (c *RouteConfig) SetupV1Route() {
 	})
 
 	v1.Get("/provinces", c.ProvinceController.List)
-	v1.Get("/provinces/:id<int>", c.ProvinceController.GetFirstByID)
+	v1.Get("/provinces/:id<int>", c.ProvinceController.GetFirstById)
 
-	v1.Get("/cities", c.CityController.ListByIdAndIdProvince)
-	v1.Get("/cities/:id<int>", c.CityController.GetByIDAndIdProvince)
-	v1.Get("/provinces/:id_province<int>/cities", c.CityController.GetByIDAndIdProvince)
-	v1.Get("/provinces/:id_province<int>/cities/:id<int>", c.CityController.GetFirstByIDAndIdProvince)
+	v1.Get("/cities", c.CityController.List)
+	v1.Get("/cities/:id<int>", c.CityController.GetById)
+	v1.Get("/provinces/:id_province<int>/cities", c.CityController.GetById)
+	v1.Get("/provinces/:id_province<int>/cities/:id<int>", c.CityController.GetFirstById)
+
+	v1.Get("/districts", c.DistrictController.List)
+	v1.Get("/districts/:id<int>", c.DistrictController.GetById)
+	v1.Get("/provinces/:id_province<int>/cities/:id_city<int>/districts", c.DistrictController.GetById)
+	v1.Get("/provinces/:id_province<int>/cities/:id_city<int>/districts/:id<int>", c.DistrictController.GetFirstById)
 }
