@@ -7,8 +7,9 @@ import (
 
 	"github.com/aikuci/go-subdivisions-id/internal/entity"
 	"github.com/aikuci/go-subdivisions-id/internal/model"
-	apperror "github.com/aikuci/go-subdivisions-id/internal/pkg/error"
 	"github.com/aikuci/go-subdivisions-id/internal/repository"
+	appusecase "github.com/aikuci/go-subdivisions-id/pkg/usecase"
+	apperror "github.com/aikuci/go-subdivisions-id/pkg/util/error"
 
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -28,56 +29,62 @@ func NewCityUseCase(log *zap.Logger, db *gorm.DB, repository *repository.CityRep
 	}
 }
 
-func (uc *CityUseCase) List(ctx context.Context, request model.ListCityByIDRequest[[]int]) ([]entity.City, error) {
-	return wrapperPlural(
-		newUseCase[entity.City](ctx, uc.Log, uc.DB, request),
-		func(ca *CallbackArgs[model.ListCityByIDRequest[[]int]]) ([]entity.City, error) {
+func (uc *CityUseCase) List(ctx context.Context, request model.ListCityByIDRequest[[]int]) (*[]entity.City, int64, error) {
+	return appusecase.Wrapper[entity.City](
+		appusecase.NewContext(ctx, uc.Log, uc.DB, request),
+		func(ctx *appusecase.UseCaseContext[model.ListCityByIDRequest[[]int]]) (*[]entity.City, int64, error) {
 			where := map[string]interface{}{}
-			if ca.request.ID != nil {
-				where["id"] = ca.request.ID
+			if ctx.Request.ID != nil {
+				where["id"] = ctx.Request.ID
 			}
-			if ca.request.IDProvince != nil {
-				where["id_province"] = ca.request.IDProvince
+			if ctx.Request.IDProvince != nil {
+				where["id_province"] = ctx.Request.IDProvince
 			}
-			return uc.Repository.FindBy(ca.tx, where)
+
+			collections, total, err := uc.Repository.FindAndCountBy(ctx.DB, where)
+			return &collections, total, err
 		},
 	)
 }
-func (uc *CityUseCase) GetById(ctx context.Context, request model.GetCityByIDRequest[[]int]) ([]entity.City, error) {
-	return wrapperPlural(
-		newUseCase[entity.City](ctx, uc.Log, uc.DB, request),
-		func(ca *CallbackArgs[model.GetCityByIDRequest[[]int]]) ([]entity.City, error) {
+
+func (uc *CityUseCase) GetById(ctx context.Context, request model.GetCityByIDRequest[[]int]) (*[]entity.City, int64, error) {
+	return appusecase.Wrapper[entity.City](
+		appusecase.NewContext(ctx, uc.Log, uc.DB, request),
+		func(ctx *appusecase.UseCaseContext[model.GetCityByIDRequest[[]int]]) (*[]entity.City, int64, error) {
 			where := map[string]interface{}{}
-			if ca.request.ID != nil {
-				where["id"] = ca.request.ID
+			if ctx.Request.ID != nil {
+				where["id"] = ctx.Request.ID
 			}
-			if ca.request.IDProvince != nil {
-				where["id_province"] = ca.request.IDProvince
+			if ctx.Request.IDProvince != nil {
+				where["id_province"] = ctx.Request.IDProvince
 			}
-			return uc.Repository.FindBy(ca.tx, where)
+
+			collections, total, err := uc.Repository.FindAndCountBy(ctx.DB, where)
+			return &collections, total, err
 		},
 	)
 }
-func (uc *CityUseCase) GetFirstById(ctx context.Context, request model.GetCityByIDRequest[int]) (*entity.City, error) {
-	return wrapperSingular(
-		newUseCase[entity.City](ctx, uc.Log, uc.DB, request),
-		func(ca *CallbackArgs[model.GetCityByIDRequest[int]]) (*entity.City, error) {
-			id := ca.request.ID
-			idProvince := ca.request.IDProvince
-			collection, err := uc.Repository.FirstByIdAndIdProvince(ca.tx, id, idProvince)
+
+func (uc *CityUseCase) GetFirstById(ctx context.Context, request model.GetCityByIDRequest[int]) (*entity.City, int64, error) {
+	return appusecase.Wrapper[entity.City](
+		appusecase.NewContext(ctx, uc.Log, uc.DB, request),
+		func(ctx *appusecase.UseCaseContext[model.GetCityByIDRequest[int]]) (*entity.City, int64, error) {
+			id := ctx.Request.ID
+			idProvince := ctx.Request.IDProvince
+			collection, err := uc.Repository.FirstByIdAndIdProvince(ctx.DB, id, idProvince)
 
 			if err != nil {
 				if errors.Is(err, gorm.ErrRecordNotFound) {
 					errorMessage := fmt.Sprintf("failed to get cities data with ID: %d and ID Province: %d", id, idProvince)
-					ca.log.Warn(err.Error(), zap.String("errorMessage", errorMessage))
-					return nil, apperror.RecordNotFound(errorMessage)
+					ctx.Log.Warn(err.Error(), zap.String("errorMessage", errorMessage))
+					return nil, 0, apperror.RecordNotFound(errorMessage)
 				}
 
-				ca.log.Warn(err.Error())
-				return nil, err
+				ctx.Log.Warn(err.Error())
+				return nil, 0, err
 			}
 
-			return collection, nil
+			return &collection, 1, nil
 		},
 	)
 }

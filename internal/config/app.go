@@ -7,6 +7,9 @@ import (
 	"github.com/aikuci/go-subdivisions-id/internal/model/mapper"
 	"github.com/aikuci/go-subdivisions-id/internal/repository"
 	"github.com/aikuci/go-subdivisions-id/internal/usecase"
+	apphttp "github.com/aikuci/go-subdivisions-id/pkg/delivery/http"
+	apprepository "github.com/aikuci/go-subdivisions-id/pkg/repository"
+	appusecase "github.com/aikuci/go-subdivisions-id/pkg/usecase"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/gofiber/fiber/v2"
@@ -25,17 +28,17 @@ type BootstrapConfig struct {
 
 func Bootstrap(config *BootstrapConfig) {
 	// setup repositories
-	provinceRepository := repository.NewCrudRepository[entity.Province, int, []int]()
+	provinceRepository := apprepository.NewCrudRepository[entity.Province, int, []int]()
 	cityRepository := repository.NewCityRepository[int, []int]()
 	districtRepository := repository.NewDistrictRepository[int, []int]()
 
 	// setup use cases
-	provinceUseCase := usecase.NewCrudUseCase(config.Log, config.DB, provinceRepository)
+	provinceUseCase := appusecase.NewCrudUseCase(config.Log, config.DB, provinceRepository)
 	cityUseCase := usecase.NewCityUseCase(config.Log, config.DB, cityRepository)
 	districtUseCase := usecase.NewDistrictUseCase(config.Log, config.DB, districtRepository)
 
 	// setup controllers
-	provinceController := http.NewCrudController(config.Log, provinceUseCase, mapper.NewProvinceMapper())
+	provinceController := apphttp.NewCrudController(config.Log, provinceUseCase, mapper.NewProvinceMapper())
 	cityController := http.NewCityController(config.Log, cityUseCase, mapper.NewCityMapper())
 	districtController := http.NewDistrictController(config.Log, districtUseCase, mapper.NewDistrictMapper())
 

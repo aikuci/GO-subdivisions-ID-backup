@@ -7,14 +7,16 @@ import (
 	"runtime/debug"
 	"time"
 
-	apperror "github.com/aikuci/go-subdivisions-id/internal/pkg/error"
+	apperror "github.com/aikuci/go-subdivisions-id/pkg/util/error"
 
 	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cache"
 	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
 	"github.com/gofiber/storage/sqlite3/v2"
+	"github.com/gofiber/utils/v2"
 	"github.com/spf13/viper"
 )
 
@@ -34,6 +36,11 @@ func NewFiber(config *viper.Viper, options *AppOptions) *fiber.App {
 		Format:     "[${time}](${pid} ${locals:requestid}) ${status} - ${latency} ${method} ${path}\n",
 		TimeFormat: time.RFC1123Z,
 		Output:     options.LogWriter,
+	}))
+	app.Use(cache.New(cache.Config{
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return utils.CopyString(c.Path()) + utils.CopyString(string(c.Request().URI().QueryString()))
+		},
 	}))
 	app.Use(newLimiterConfig(config))
 	app.Use(recover.New(recover.Config{
