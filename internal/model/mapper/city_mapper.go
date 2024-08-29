@@ -24,6 +24,11 @@ func (m *CityMapper) ModelToResponse(city *entity.City) *model.CityResponse {
 	for i, collection := range city.Districts {
 		districts[i] = *districtsMapper.ModelToResponse(&collection)
 	}
+	villagesMapper := NewVillageMapper()
+	villages := make([]model.VillageResponse, len(city.Villages))
+	for i, collection := range city.Villages {
+		villages[i] = *villagesMapper.ModelToResponse(&collection)
+	}
 
 	return &model.CityResponse{
 		BaseCollectionResponse: appmodel.BaseCollectionResponse[int]{ID: city.ID},
@@ -34,5 +39,6 @@ func (m *CityMapper) ModelToResponse(city *entity.City) *model.CityResponse {
 
 		Province:  province,
 		Districts: districts,
+		Villages:  villages,
 	}
 }

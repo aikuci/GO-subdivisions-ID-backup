@@ -13,4 +13,5 @@ type ProvinceResponse struct {
 	PostalCodes pq.Int64Array      `json:"postal_codes"`
 	Cities      []CityResponse     `json:"cities,omitempty"`
 	Districts   []DistrictResponse `json:"districts,omitempty"`
+	Villages    []VillageResponse  `json:"villages,omitempty"`
 }

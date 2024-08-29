@@ -15,6 +15,7 @@ type DistrictResponse struct {
 	PostalCodes pq.Int64Array     `json:"postal_codes"`
 	City        *CityResponse     `json:"city,omitempty"`
 	Province    *ProvinceResponse `json:"province,omitempty"`
+	Villages    []VillageResponse `json:"villages,omitempty"`
 }
 
 type ListDistrictByIDRequest[T appmodel.IdPlural] struct {

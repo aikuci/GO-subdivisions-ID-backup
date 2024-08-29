@@ -8,15 +8,15 @@ import (
 
 type VillageResponse struct {
 	appmodel.BaseCollectionResponse[int]
-	IDDistrict  int              `json:"id_district"`
-	IDCity      int              `json:"id_city"`
-	IDProvince  int              `json:"id_province"`
-	Code        string           `json:"code"`
-	Name        string           `json:"name"`
-	PostalCodes pq.Int64Array    `json:"postal_codes"`
-	District    DistrictResponse `json:"district,omitempty"`
-	City        CityResponse     `json:"city,omitempty"`
-	Province    ProvinceResponse `json:"province,omitempty"`
+	IDDistrict  int               `json:"id_district"`
+	IDCity      int               `json:"id_city"`
+	IDProvince  int               `json:"id_province"`
+	Code        string            `json:"code"`
+	Name        string            `json:"name"`
+	PostalCodes pq.Int64Array     `json:"postal_codes"`
+	District    *DistrictResponse `json:"district,omitempty"`
+	City        *CityResponse     `json:"city,omitempty"`
+	Province    *ProvinceResponse `json:"province,omitempty"`
 }
 
 type ListVillageByIDRequest[T appmodel.IdPlural] struct {
