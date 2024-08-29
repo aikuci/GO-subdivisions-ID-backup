@@ -13,8 +13,16 @@ func NewDistrictMapper() *DistrictMapper {
 }
 
 func (m *DistrictMapper) ModelToResponse(district *entity.District) *model.DistrictResponse {
-	provinceMapper := NewProvinceMapper()
-	cityMapper := NewCityMapper()
+	var province *model.ProvinceResponse
+	if district.Province.ID > 0 {
+		provinceMapper := NewProvinceMapper()
+		province = provinceMapper.ModelToResponse(&district.Province)
+	}
+	var city *model.CityResponse
+	if district.City.ID > 0 {
+		cityMapper := NewCityMapper()
+		city = cityMapper.ModelToResponse(&district.City)
+	}
 
 	return &model.DistrictResponse{
 		BaseCollectionResponse: appmodel.BaseCollectionResponse[int]{ID: district.ID},
@@ -23,7 +31,8 @@ func (m *DistrictMapper) ModelToResponse(district *entity.District) *model.Distr
 		Code:                   district.Code,
 		Name:                   district.Name,
 		PostalCodes:            district.PostalCodes,
-		City:                   *cityMapper.ModelToResponse(&district.City),
-		Province:               *provinceMapper.ModelToResponse(&district.Province),
+
+		Province: province,
+		City:     city,
 	}
 }

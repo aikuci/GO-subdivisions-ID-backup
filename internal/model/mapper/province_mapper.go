@@ -29,7 +29,8 @@ func (m *ProvinceMapper) ModelToResponse(province *entity.Province) *model.Provi
 		Code:                   province.Code,
 		Name:                   province.Name,
 		PostalCodes:            province.PostalCodes,
-		Cities:                 cities,
-		Districts:              districts,
+
+		Cities:    cities,
+		Districts: districts,
 	}
 }

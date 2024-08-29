@@ -13,7 +13,11 @@ func NewCityMapper() *CityMapper {
 }
 
 func (m *CityMapper) ModelToResponse(city *entity.City) *model.CityResponse {
-	provinceMapper := NewProvinceMapper()
+	var province *model.ProvinceResponse
+	if city.Province.ID > 0 {
+		provinceMapper := NewProvinceMapper()
+		province = provinceMapper.ModelToResponse(&city.Province)
+	}
 
 	districtsMapper := NewDistrictMapper()
 	districts := make([]model.DistrictResponse, len(city.Districts))
@@ -27,7 +31,8 @@ func (m *CityMapper) ModelToResponse(city *entity.City) *model.CityResponse {
 		Code:                   city.Code,
 		Name:                   city.Name,
 		PostalCodes:            city.PostalCodes,
-		Province:               *provinceMapper.ModelToResponse(&city.Province),
-		Districts:              districts,
+
+		Province:  province,
+		Districts: districts,
 	}
 }
