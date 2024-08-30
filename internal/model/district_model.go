@@ -8,13 +8,14 @@ import (
 
 type DistrictResponse struct {
 	appmodel.BaseCollectionResponse[int]
-	IDCity      int              `json:"id_city"`
-	IDProvince  int              `json:"id_province"`
-	Code        string           `json:"code"`
-	Name        string           `json:"name"`
-	PostalCodes pq.Int64Array    `json:"postal_codes"`
-	City        CityResponse     `json:"city,omitempty"`
-	Province    ProvinceResponse `json:"province,omitempty"`
+	IDCity      int               `json:"id_city"`
+	IDProvince  int               `json:"id_province"`
+	Code        string            `json:"code"`
+	Name        string            `json:"name"`
+	PostalCodes pq.Int64Array     `json:"postal_codes"`
+	City        *CityResponse     `json:"city,omitempty"`
+	Province    *ProvinceResponse `json:"province,omitempty"`
+	Villages    []VillageResponse `json:"villages,omitempty"`
 }
 
 type ListDistrictByIDRequest[T appmodel.IdPlural] struct {

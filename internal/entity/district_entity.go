@@ -11,6 +11,7 @@ type District struct {
 	PostalCodes pq.Int64Array `gorm:"column:postal_codes;type:int4[]"`
 	City        City
 	Province    Province
+	Villages    []Village `gorm:"foreignKey:id_district,id_city,id_province"`
 }
 
 func (p *District) TableName() string {

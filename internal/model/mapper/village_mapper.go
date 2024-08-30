@@ -13,6 +13,22 @@ func NewVillageMapper() *VillageMapper {
 }
 
 func (m *VillageMapper) ModelToResponse(village *entity.Village) *model.VillageResponse {
+	var province *model.ProvinceResponse
+	if village.Province.ID > 0 {
+		provinceMapper := NewProvinceMapper()
+		province = provinceMapper.ModelToResponse(&village.Province)
+	}
+	var city *model.CityResponse
+	if village.City.ID > 0 {
+		cityMapper := NewCityMapper()
+		city = cityMapper.ModelToResponse(&village.City)
+	}
+	var district *model.DistrictResponse
+	if village.District.ID > 0 {
+		districtMapper := NewDistrictMapper()
+		district = districtMapper.ModelToResponse(&village.District)
+	}
+
 	return &model.VillageResponse{
 		BaseCollectionResponse: appmodel.BaseCollectionResponse[int]{ID: village.ID},
 		IDDistrict:             village.DistrictID,
@@ -21,5 +37,9 @@ func (m *VillageMapper) ModelToResponse(village *entity.Village) *model.VillageR
 		Code:                   village.Code,
 		Name:                   village.Name,
 		PostalCodes:            village.PostalCodes,
+
+		Province: province,
+		City:     city,
+		District: district,
 	}
 }

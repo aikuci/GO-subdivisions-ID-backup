@@ -13,12 +13,21 @@ func NewCityMapper() *CityMapper {
 }
 
 func (m *CityMapper) ModelToResponse(city *entity.City) *model.CityResponse {
-	provinceMapper := NewProvinceMapper()
+	var province *model.ProvinceResponse
+	if city.Province.ID > 0 {
+		provinceMapper := NewProvinceMapper()
+		province = provinceMapper.ModelToResponse(&city.Province)
+	}
 
 	districtsMapper := NewDistrictMapper()
 	districts := make([]model.DistrictResponse, len(city.Districts))
 	for i, collection := range city.Districts {
 		districts[i] = *districtsMapper.ModelToResponse(&collection)
+	}
+	villagesMapper := NewVillageMapper()
+	villages := make([]model.VillageResponse, len(city.Villages))
+	for i, collection := range city.Villages {
+		villages[i] = *villagesMapper.ModelToResponse(&collection)
 	}
 
 	return &model.CityResponse{
@@ -27,7 +36,9 @@ func (m *CityMapper) ModelToResponse(city *entity.City) *model.CityResponse {
 		Code:                   city.Code,
 		Name:                   city.Name,
 		PostalCodes:            city.PostalCodes,
-		Province:               *provinceMapper.ModelToResponse(&city.Province),
-		Districts:              districts,
+
+		Province:  province,
+		Districts: districts,
+		Villages:  villages,
 	}
 }
