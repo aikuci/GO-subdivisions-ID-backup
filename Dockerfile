@@ -1,4 +1,4 @@
-FROM golang:1.23 as build
+FROM golang:1.22.5 as build
 WORKDIR /app
 COPY . .
 RUN go build -o /cmd/web/main .
