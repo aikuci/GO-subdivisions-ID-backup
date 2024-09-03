@@ -1,4 +1,4 @@
-FROM golang:1.22 as build
+FROM golang:1.22.5-bullseye as build
 WORKDIR /app
 COPY . .
 RUN go build -o /server /cmd/web/main.go
