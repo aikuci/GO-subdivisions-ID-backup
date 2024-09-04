@@ -1,13 +1,11 @@
 package config
 
 import (
-	"github.com/aikuci/go-subdivisions-id/internal/delivery/http"
+	"github.com/aikuci/go-subdivisions-id/internal/delivery/http/handler"
 	"github.com/aikuci/go-subdivisions-id/internal/delivery/http/route"
 	"github.com/aikuci/go-subdivisions-id/internal/entity"
-	"github.com/aikuci/go-subdivisions-id/internal/model/mapper"
 	"github.com/aikuci/go-subdivisions-id/internal/repository"
 	"github.com/aikuci/go-subdivisions-id/internal/usecase"
-	apphttp "github.com/aikuci/go-subdivisions-id/pkg/delivery/http"
 	apprepository "github.com/aikuci/go-subdivisions-id/pkg/repository"
 	appusecase "github.com/aikuci/go-subdivisions-id/pkg/usecase"
 
@@ -27,31 +25,31 @@ type BootstrapConfig struct {
 }
 
 func Bootstrap(config *BootstrapConfig) {
-	// setup repositories
-	provinceRepository := apprepository.NewCrudRepository[entity.Province, int, []int]()
-	cityRepository := repository.NewCityRepository[int, []int]()
-	districtRepository := repository.NewDistrictRepository[int, []int]()
-	villageRepository := repository.NewVillageRepository[int, []int]()
+	// Repositories
+	provinceRepository := apprepository.NewCrud[entity.Province, int, []int]()
+	cityRepository := repository.NewCity[int, []int]()
+	districtRepository := repository.NewDistrict[int, []int]()
+	villageRepository := repository.NewVillage[int, []int]()
 
-	// setup use cases
-	provinceUseCase := appusecase.NewCrudUseCase(config.Log, config.DB, provinceRepository)
-	cityUseCase := usecase.NewCityUseCase(config.Log, config.DB, cityRepository)
-	districtUseCase := usecase.NewDistrictUseCase(config.Log, config.DB, districtRepository)
-	villageUseCase := usecase.NewVillageUseCase(config.Log, config.DB, villageRepository)
+	// UseCases
+	provinceUseCase := appusecase.NewCrud(config.Log, config.DB, provinceRepository)
+	cityUseCase := usecase.NewCity(config.Log, config.DB, cityRepository)
+	districtUseCase := usecase.NewDistrict(config.Log, config.DB, districtRepository)
+	villageUseCase := usecase.NewVillage(config.Log, config.DB, villageRepository)
 
-	// setup controllers
-	provinceController := apphttp.NewCrudController(config.Log, provinceUseCase, mapper.NewProvinceMapper())
-	cityController := http.NewCityController(config.Log, cityUseCase, mapper.NewCityMapper())
-	districtController := http.NewDistrictController(config.Log, districtUseCase, mapper.NewDistrictMapper())
-	villageController := http.NewVillageController(config.Log, villageUseCase, mapper.NewVillageMapper())
+	// Handlers
+	provinceHandler := handler.NewProvince(provinceUseCase)
+	cityHandler := handler.NewCity(cityUseCase)
+	districtHandler := handler.NewDistrict(districtUseCase)
+	villageHandler := handler.NewVillage(villageUseCase)
 
 	routeConfig := route.RouteConfig{
-		App:                config.App,
-		DB:                 config.DB,
-		ProvinceController: provinceController,
-		CityController:     cityController,
-		DistrictController: districtController,
-		VillageController:  villageController,
+		App:             config.App,
+		DB:              config.DB,
+		ProvinceHandler: provinceHandler,
+		CityHandler:     cityHandler,
+		DistrictHandler: districtHandler,
+		VillageHandler:  villageHandler,
 	}
 	routeConfig.Setup()
 }

@@ -6,9 +6,9 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/aikuci/go-subdivisions-id/pkg/delivery/http/middleware/requestid"
 	"github.com/aikuci/go-subdivisions-id/pkg/model"
 	apperror "github.com/aikuci/go-subdivisions-id/pkg/util/error"
+	applog "github.com/aikuci/go-subdivisions-id/pkg/util/log"
 	"github.com/aikuci/go-subdivisions-id/pkg/util/slice"
 
 	"github.com/gobeam/stringy"
@@ -16,15 +16,15 @@ import (
 	"gorm.io/gorm"
 )
 
-type UseCaseContext[T any] struct {
+type Context[T any] struct {
 	Ctx     context.Context
 	Log     *zap.Logger
 	DB      *gorm.DB
 	Request T
 }
 
-func NewContext[T any](ctx context.Context, log *zap.Logger, db *gorm.DB, request T) *UseCaseContext[T] {
-	return &UseCaseContext[T]{
+func NewContext[T any](ctx context.Context, log *zap.Logger, db *gorm.DB, request T) *Context[T] {
+	return &Context[T]{
 		Ctx:     ctx,
 		Log:     log,
 		DB:      db,
@@ -32,13 +32,11 @@ func NewContext[T any](ctx context.Context, log *zap.Logger, db *gorm.DB, reques
 	}
 }
 
-type Callback[TEntity any, TRequest any, TResult any] func(ctx *UseCaseContext[TRequest]) (*TResult, int64, error)
+type Callback[TEntity any, TRequest any, TResult any] func(ctx *Context[TRequest]) (*TResult, int64, error)
 
-func Wrapper[TEntity any, TRequest any, TResult any](ctx *UseCaseContext[TRequest], callback Callback[TEntity, TRequest, TResult]) (*TResult, int64, error) {
-	ctx.Log = ctx.Log.With(zap.String("requestid", requestid.FromContext(ctx.Ctx)))
-
+func Wrapper[TEntity any, TRequest any, TResult any](ctx *Context[TRequest], callback Callback[TEntity, TRequest, TResult]) (*TResult, int64, error) {
 	var err error
-	ctx.DB, err = addRelations(ctx.Log, ctx.DB, generateRelations[TEntity](ctx.DB), ctx.Request)
+	ctx.DB, err = addRelations(ctx.DB, generateRelations[TEntity](ctx.DB), ctx.Request)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -49,12 +47,18 @@ func Wrapper[TEntity any, TRequest any, TResult any](ctx *UseCaseContext[TReques
 
 	collections, total, err := callback(ctx)
 	if err != nil {
-		return nil, 0, err
+		if apperr, ok := err.(*apperror.CustomErrorResponse); ok {
+			return nil, 0, apperr
+		}
+
+		errorMessage := "failed to process"
+		applog.Write(ctx.Log, ctx.Ctx, fmt.Sprintf("%v: ", errorMessage), err)
+		return nil, 0, apperror.InternalServerError(errorMessage)
 	}
 
 	if err := ctx.DB.Commit().Error; err != nil {
 		errorMessage := "failed to commit transaction"
-		ctx.Log.Warn(err.Error(), zap.String("errorMessage", errorMessage))
+		applog.Write(ctx.Log, ctx.Ctx, fmt.Sprintf("%v: ", errorMessage), err)
 		return nil, 0, apperror.InternalServerError(errorMessage)
 	}
 
@@ -98,7 +102,7 @@ func collectRelations(db *gorm.DB, collection any) *relations {
 	return &relations{pascal: relations_pascal, snake: relations_snake}
 }
 
-func addRelations(log *zap.Logger, db *gorm.DB, relations *relations, request any) (*gorm.DB, error) {
+func addRelations(db *gorm.DB, relations *relations, request any) (*gorm.DB, error) {
 	r := reflect.ValueOf(request)
 	if r.FieldByName("Include").IsValid() {
 		if include, ok := r.FieldByName("Include").Interface().([]string); ok {
@@ -110,9 +114,7 @@ func addRelations(log *zap.Logger, db *gorm.DB, relations *relations, request an
 				} else {
 					idx := slice.ArrayIndexOf(relations.snake, relation)
 					if idx == -1 {
-						errorMessage := fmt.Sprintf("Invalid relation '%v' provided. Available relation is '(%v)'.", relation, strings.Join(relations.snake, ", "))
-						log.Warn(errorMessage)
-						return nil, apperror.BadRequest(errorMessage)
+						return nil, apperror.BadRequest(fmt.Sprintf("Invalid relation: %v provided. Available relations are [%v].", relation, strings.Join(relations.snake, ", ")))
 					}
 					db = db.Preload(relations.pascal[idx])
 				}

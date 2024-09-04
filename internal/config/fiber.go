@@ -8,6 +8,7 @@ import (
 	"time"
 
 	apperror "github.com/aikuci/go-subdivisions-id/pkg/util/error"
+	applog "github.com/aikuci/go-subdivisions-id/pkg/util/log"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cache"
@@ -15,8 +16,8 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/gofiber/fiber/v2/middleware/requestid"
+	"github.com/gofiber/fiber/v2/utils"
 	"github.com/gofiber/storage/sqlite3/v2"
-	"github.com/gofiber/utils/v2"
 	"github.com/spf13/viper"
 )
 
@@ -24,11 +25,11 @@ type AppOptions struct {
 	LogWriter io.Writer
 }
 
-func NewFiber(config *viper.Viper, options *AppOptions) *fiber.App {
+func NewFiber(viper *viper.Viper, options *AppOptions) *fiber.App {
 	var app = fiber.New(fiber.Config{
-		AppName:                  config.GetString("app.name"),
-		ErrorHandler:             NewErrorHandler(),
-		Prefork:                  config.GetBool("web.prefork"),
+		AppName:                  viper.GetString("app.name"),
+		ErrorHandler:             NewErrorHandler(viper),
+		Prefork:                  viper.GetBool("web.prefork"),
 		EnableSplittingOnParsers: true,
 	})
 
@@ -42,7 +43,7 @@ func NewFiber(config *viper.Viper, options *AppOptions) *fiber.App {
 			return utils.CopyString(c.Path()) + utils.CopyString(string(c.Request().URI().QueryString()))
 		},
 	}))
-	app.Use(newLimiterConfig(config))
+	app.Use(newLimiterConfig(viper))
 	app.Use(recover.New(recover.Config{
 		StackTraceHandler: func(c *fiber.Ctx, e interface{}) {
 			fmt.Println(c.Request().URI())
@@ -55,16 +56,18 @@ func NewFiber(config *viper.Viper, options *AppOptions) *fiber.App {
 	return app
 }
 
-func NewErrorHandler() fiber.ErrorHandler {
+func NewErrorHandler(viper *viper.Viper) fiber.ErrorHandler {
 	return func(ctx *fiber.Ctx, err error) error {
 		code := fiber.StatusInternalServerError
 
-		if e, ok := err.(*fiber.Error); ok {
+		switch e := err.(type) {
+		case *fiber.Error:
 			code = e.Code
-		}
-		if e, ok := err.(*apperror.CustomErrorResponse); ok {
+		case *apperror.CustomErrorResponse:
 			code = e.HTTPCode
 		}
+
+		applog.Write(NewZapLog(viper), ctx.UserContext(), "[fiber]: ", err)
 
 		return ctx.Status(code).JSON(fiber.Map{
 			"errors": err.Error(),
@@ -72,7 +75,7 @@ func NewErrorHandler() fiber.ErrorHandler {
 	}
 }
 
-func newLimiterConfig(config *viper.Viper) fiber.Handler {
+func newLimiterConfig(viper *viper.Viper) fiber.Handler {
 	storage := sqlite3.New(sqlite3.Config{
 		Database:        "./storage/log/fiber-limiter.sqlite3",
 		Table:           "fiber_storage",
@@ -84,7 +87,7 @@ func newLimiterConfig(config *viper.Viper) fiber.Handler {
 	})
 
 	limiterConfig := func() limiter.Config {
-		if config.GetString("app.mode") == "production" {
+		if viper.GetString("app.mode") == "production" {
 			return newProductionLimiterConfig(storage)
 		}
 
