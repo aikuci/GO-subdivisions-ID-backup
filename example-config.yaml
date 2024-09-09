@@ -1,6 +1,6 @@
 app:
   name: GO-subdivisions-ID
-  mode: development
+  mode: test
 web:
   prefork: false
   port: 3000

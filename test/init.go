@@ -1,11 +1,9 @@
 package test
 
 import (
-	"log"
 	"os"
 
 	"github.com/aikuci/go-subdivisions-id/internal/config"
-	"github.com/aikuci/go-subdivisions-id/internal/entity"
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/spf13/viper"
@@ -33,13 +31,4 @@ func init() {
 		Log:    zapLog,
 		DB:     db,
 	})
-
-	// initTables()
-}
-
-func initTables() {
-	err := db.AutoMigrate(&entity.Province{}, &entity.City{}, &entity.District{}, &entity.Village{})
-	if err != nil {
-		log.Fatalf("failed to initialize tables: %v", err)
-	}
 }

@@ -33,7 +33,7 @@ type Config struct {
 func main() {
 	// https://stackoverflow.com/a/78709806
 
-	viper.SetConfigName("config")
+	viper.SetConfigName("example.config")
 	viper.SetConfigType("yaml")
 	viper.AddConfigPath("./../")
 	viper.AddConfigPath("./")
