@@ -25,5 +25,8 @@ jobs:
     - name: Install dependencies
       run: go mod download
 
+    - name: Copy environment config file
+      run: echo "${{ secrets.ACTION_TEST_CONFIG }}" > config.yaml
+
     - name: Test
       run: go test -v ./...
