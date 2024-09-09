@@ -34,7 +34,7 @@ func init() {
 		DB:     db,
 	})
 
-	initTables()
+	// initTables()
 }
 
 func initTables() {
