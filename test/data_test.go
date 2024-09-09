@@ -45,7 +45,7 @@ func CreateProvincesAndItsRelations(total int, totalRelations TotalProvinceRelat
 		}
 		err := db.Create(province).Error
 		if err != nil {
-			log.Fatal("Failed create province data : %+v", zap.Error(err))
+			zapLog.Fatal("Failed create province data : %+v", zap.Error(err))
 		}
 
 		CreateCities(
@@ -72,7 +72,7 @@ func CreateCities(total int, relations CityRelations, totalRelations TotalCityRe
 		}
 		err := db.Create(city).Error
 		if err != nil {
-			log.Fatal("Failed create city data : %+v", zap.Error(err))
+			zapLog.Fatal("Failed create city data : %+v", zap.Error(err))
 		}
 
 		CreateDistricts(
@@ -95,7 +95,7 @@ func CreateDistricts(total int, relations DistrictRelations, totalRelations Tota
 		}
 		err := db.Create(district).Error
 		if err != nil {
-			log.Fatal("Failed create district data : %+v", zap.Error(err))
+			zapLog.Fatal("Failed create district data : %+v", zap.Error(err))
 		}
 
 		CreateVillages(totalRelations.totalVillage, VillageRelations{districtId: i, DistrictRelations: relations})
@@ -115,7 +115,7 @@ func CreateVillages(total int, relations VillageRelations) {
 		}
 		err := db.Create(village).Error
 		if err != nil {
-			log.Fatal("Failed create village data : %+v", zap.Error(err))
+			zapLog.Fatal("Failed create village data : %+v", zap.Error(err))
 		}
 	}
 }
@@ -158,27 +158,27 @@ func ClearAll() {
 func ClearProvinces() {
 	err := db.Where("id is not null").Delete(&entity.Province{}).Error
 	if err != nil {
-		log.Fatal("Failed clear province data: %+v", zap.Error(err))
+		zapLog.Fatal("Failed clear province data: %+v", zap.Error(err))
 	}
 }
 
 func ClearCities() {
 	err := db.Where("id is not null").Delete(&entity.City{}).Error
 	if err != nil {
-		log.Fatal("Failed clear city data: %+v", zap.Error(err))
+		zapLog.Fatal("Failed clear city data: %+v", zap.Error(err))
 	}
 }
 
 func ClearDistricts() {
 	err := db.Where("id is not null").Delete(&entity.District{}).Error
 	if err != nil {
-		log.Fatal("Failed clear district data: %+v", zap.Error(err))
+		zapLog.Fatal("Failed clear district data: %+v", zap.Error(err))
 	}
 }
 
 func ClearVillages() {
 	err := db.Where("id is not null").Delete(&entity.Village{}).Error
 	if err != nil {
-		log.Fatal("Failed clear village data: %+v", zap.Error(err))
+		zapLog.Fatal("Failed clear village data: %+v", zap.Error(err))
 	}
 }

@@ -17,18 +17,18 @@ var db *gorm.DB
 
 var viperConfig *viper.Viper
 
-var log *zap.Logger
+var zapLog *zap.Logger
 
 func init() {
 	viperConfig = config.NewViper()
-	log = config.NewZapLog(viperConfig)
+	zapLog = config.NewZapLog(viperConfig)
 	app = config.NewFiber(viperConfig, &config.AppOptions{LogWriter: os.Stdout})
 	db = config.NewDatabase(viperConfig)
 
 	config.Bootstrap(&config.BootstrapConfig{
 		App:    app,
 		Config: viperConfig,
-		Log:    log,
+		Log:    zapLog,
 		DB:     db,
 	})
 }
