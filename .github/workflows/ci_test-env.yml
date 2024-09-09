@@ -1,0 +1,27 @@
+name: CI with Env
+
+on:
+  push:
+    branches: [ "ci-test" ]
+
+jobs:
+
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: [ '1.22.5' ]
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup Go ${{ matrix.go-version }}
+      uses: actions/setup-go@v5
+      with:
+        go-version: ${{ matrix.go-version }}
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run
+      run: go run ./cmd/test/main.go
