@@ -1,11 +1,11 @@
-name: CI with Env
+name: CI
 
 on:
   push:
-    branches: [ "ci-test" ]
+    branches: [ "main" ]
+  pull_request:
 
 jobs:
-
   test:
     runs-on: ubuntu-latest
     strategy:
@@ -20,11 +20,11 @@ jobs:
       with:
         go-version: ${{ matrix.go-version }}
 
-    - name: Copy environment config file
-      run: echo "${{ secrets.ACTION_TEST_CONFIG }}" > config.yaml
-
     - name: Install dependencies
       run: go mod download
 
-    - name: Run
-      run: go run ./cmd/test/main.go
+    - name: Copy environment config file
+      run: echo "${{ secrets.ACTION_TEST_CONFIG }}" > config.yaml
+
+    - name: Test
+      run: go test -v ./...
